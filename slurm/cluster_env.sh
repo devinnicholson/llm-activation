@@ -23,3 +23,17 @@ echo "Tasks: ${SLURM_NTASKS:-1}"
 echo "Spack env: $SPACK_ENV_NAME"
 echo "Python: $(command -v python || true)"
 python --version || true
+
+if [ "${REQUIRE_TORCH:-0}" = "1" ]; then
+    python - <<'PY'
+try:
+    import torch
+except ModuleNotFoundError as exc:
+    raise SystemExit(
+        "PyTorch is not installed in the active cluster Python. "
+        "Run `bash scripts/setup_cluster_venv.sh` from the repo root, then resubmit."
+    ) from exc
+
+print(f"Torch: {torch.__version__}")
+PY
+fi

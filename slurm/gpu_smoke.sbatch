@@ -12,6 +12,7 @@ set -euo pipefail
 
 cd "${SLURM_SUBMIT_DIR:-$PWD}"
 export SPACK_ENV_NAME=CS-2050-gpu
+export REQUIRE_TORCH=1
 source slurm/cluster_env.sh
 
 echo "GPU visibility"
