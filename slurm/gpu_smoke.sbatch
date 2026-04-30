@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=llm_gpu_smoke
+#SBATCH --job-name=activation
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
