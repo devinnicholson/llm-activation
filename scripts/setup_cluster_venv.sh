@@ -21,10 +21,12 @@ fi
 python -m pip install -e ".[dev]"
 
 if command -v maturin >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
-    (
+    if ! (
         cd native/scratch_llm_native
         maturin develop --release
-    )
+    ); then
+        echo "Rust native backend build failed; continuing with the Python tokenizer backend."
+    fi
 else
     echo "Skipping Rust native backend build because maturin or cargo is unavailable."
 fi
