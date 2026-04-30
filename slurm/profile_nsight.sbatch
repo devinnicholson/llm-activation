@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=scratch-llm-profile
+#SBATCH --job-name=activation
 #SBATCH --partition=gpu
 #SBATCH --output=profile_%j.out
 #SBATCH --error=profile_%j.err

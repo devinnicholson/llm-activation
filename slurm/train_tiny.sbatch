@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=scratch-llm-tiny
+#SBATCH --job-name=activation
 #SBATCH --partition=gpu
 #SBATCH --output=tiny_%j.out
 #SBATCH --error=tiny_%j.err

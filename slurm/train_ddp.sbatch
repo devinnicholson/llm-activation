@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=scratch-llm-ddp
+#SBATCH --job-name=activation
 #SBATCH --partition=gpu
 #SBATCH --output=ddp_%j.out
 #SBATCH --error=ddp_%j.err
