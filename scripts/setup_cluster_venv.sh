@@ -3,6 +3,8 @@
 set -euo pipefail
 
 SPACK_ENV_NAME="${SPACK_ENV_NAME:-CS-2050-gpu}"
+TORCH_VERSION="${TORCH_VERSION:-2.10.0}"
+TORCH_INDEX_URL="${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu128}"
 
 if [ -f "$HOME/161588/spack/share/spack/setup-env.sh" ]; then
     . "$HOME/161588/spack/share/spack/setup-env.sh"
@@ -13,12 +15,9 @@ python -m venv .venv
 source .venv/bin/activate
 
 python -m pip install --upgrade pip setuptools wheel
-
-if [ -n "${TORCH_INDEX_URL:-}" ]; then
-    python -m pip install torch --index-url "$TORCH_INDEX_URL"
-fi
-
-python -m pip install -e ".[dev]"
+python -m pip install --upgrade numpy pyyaml regex tqdm maturin pytest ruff
+python -m pip install "torch==$TORCH_VERSION" --index-url "$TORCH_INDEX_URL"
+python -m pip install -e . --no-deps
 
 if command -v maturin >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
     if ! (
