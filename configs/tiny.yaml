@@ -1,0 +1,56 @@
+project:
+  name: llm-activation
+  seed: 1337
+
+paths:
+  raw_glob: data/raw/*.txt
+  tokenizer: data/processed/tokenizer.json
+  train_data: data/processed/train.npy
+  val_data: data/processed/val.npy
+  metadata: data/processed/metadata.yaml
+  checkpoint_dir: checkpoints/tiny
+
+tokenizer:
+  vocab_size: 512
+  min_frequency: 1
+
+data:
+  train_ratio: 0.9
+
+model:
+  vocab_size: auto
+  context_length: 32
+  num_layers: 4
+  num_heads: 4
+  d_model: 128
+  d_ff: 384
+  rope_theta: 10000.0
+  dropout: 0.1
+  attention_impl: manual
+
+training:
+  batch_size: 16
+  gradient_accumulation_steps: 1
+  max_iters: 120
+  eval_interval: 30
+  eval_iters: 10
+  log_interval: 10
+  learning_rate: 0.0006
+  min_lr: 0.00006
+  warmup_iters: 10
+  lr_decay_iters: 120
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+  always_save_checkpoint: true
+
+system:
+  device: auto
+  dtype: float32
+  compile: false
+
+generation:
+  max_new_tokens: 80
+  temperature: 0.8
+  top_k: 50

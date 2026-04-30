@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-activation"
+version = "0.1.0"
+description = "Train and scale a CS336-style Transformer language model from scratch on HPC systems."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "numpy>=1.26",
+  "pyyaml>=6.0",
+  "regex>=2024.0",
+  "torch>=2.3",
+  "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = [
+  "maturin>=1.8",
+  "pytest>=8.2",
+  "ruff>=0.5",
+]
+viz = [
+  "matplotlib>=3.9",
+  "pandas>=2.2",
+  "seaborn>=0.13",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

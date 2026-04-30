@@ -1,0 +1,13 @@
+[build-system]
+requires = ["maturin>=1.8,<2"]
+build-backend = "maturin"
+
+[project]
+name = "scratch-llm-native"
+version = "0.1.0"
+description = "Rust native backend for llm-activation."
+requires-python = ">=3.10"
+
+[tool.maturin]
+module-name = "scratch_llm_native"
+features = ["pyo3/extension-module"]

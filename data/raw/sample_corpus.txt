@@ -1,0 +1,15 @@
+High performance computing studies how to make programs run efficiently on powerful machines.
+Parallel programs split work across processing units, but speedup depends on communication, synchronization, and load balance.
+Strong scaling measures how runtime changes when the problem size stays fixed and the number of processors increases.
+Weak scaling measures how runtime changes when the problem size grows with the number of processors.
+A transformer language model predicts the next token from previous tokens.
+Self attention lets every token read information from earlier tokens in the context window.
+The training objective is cross entropy loss between predicted logits and the next token.
+Large language models are expensive because attention, matrix multiplication, memory bandwidth, and optimizer states all consume compute.
+Distributed training uses multiple GPUs to increase throughput.
+Data parallel training gives each GPU a different batch and averages gradients across devices.
+The main bottlenecks are compute throughput, memory capacity, memory bandwidth, communication overhead, and input pipeline speed.
+Profiling shows where training time is spent.
+Good engineering means measuring tokens per second, GPU utilization, loss, memory usage, and scaling efficiency.
+Checkpointing saves model weights so training can resume after a cluster job ends.
+Generation samples tokens autoregressively, feeding each new token back into the model.
