@@ -10,6 +10,9 @@ __pycache__/
 *.md
 
 data/processed/
+data/raw/*
+!data/raw/
+!data/raw/sample_corpus.txt
 checkpoints/
 benchmarks/results/
 report/figures/*.png

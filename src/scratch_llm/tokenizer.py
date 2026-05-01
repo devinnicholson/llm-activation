@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter
+from collections.abc import Sequence
 from importlib import import_module
 from pathlib import Path
 from typing import Protocol
@@ -60,6 +61,12 @@ def _pretokenize(text: str, special_tokens: list[str]) -> Counter[tuple[bytes, .
     return counts
 
 
+def _normalize_input_paths(input_path: str | Path | Sequence[str | Path]) -> list[Path]:
+    if isinstance(input_path, str | Path):
+        return [Path(input_path)]
+    return [Path(path) for path in input_path]
+
+
 def _pair_counts(word_counts: Counter[tuple[bytes, ...]]) -> Counter[tuple[bytes, bytes]]:
     counts: Counter[tuple[bytes, bytes]] = Counter()
     for word, count in word_counts.items():
@@ -83,7 +90,7 @@ def _merge_word(word: tuple[bytes, ...], pair: tuple[bytes, bytes]) -> tuple[byt
 
 def train_bpe(
     *,
-    input_path: str | Path,
+    input_path: str | Path | Sequence[str | Path],
     vocab_size: int,
     special_tokens: list[str] | None = None,
 ) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
@@ -92,8 +99,10 @@ def train_bpe(
     if vocab_size < 256 + len(special_tokens):
         raise ValueError("vocab_size must fit all byte tokens plus special tokens.")
 
-    text = Path(input_path).read_text(encoding="utf-8")
-    word_counts = _pretokenize(text, special_tokens)
+    input_paths = _normalize_input_paths(input_path)
+    word_counts: Counter[tuple[bytes, ...]] = Counter()
+    for path in input_paths:
+        word_counts.update(_pretokenize(path.read_text(encoding="utf-8"), special_tokens))
 
     vocab: dict[int, bytes] = {idx: bytes([idx]) for idx in range(256)}
     for token in special_tokens:
@@ -145,17 +154,18 @@ def load_bpe(path: str | Path) -> tuple[dict[int, bytes], list[tuple[bytes, byte
 
 def train_bpe_to_file(
     *,
-    input_path: str | Path,
+    input_path: str | Path | Sequence[str | Path],
     vocab_size: int,
     output_path: str | Path,
     special_tokens: list[str] | None = None,
     prefer_native: bool = True,
 ) -> tuple[int, int, str]:
     special_tokens = special_tokens or SPECIAL_TOKENS
+    input_paths = _normalize_input_paths(input_path)
     native = native_backend() if prefer_native else None
-    if native is not None:
+    if native is not None and len(input_paths) == 1:
         trained_vocab_size, merge_count = native.train_bpe_to_file(
-            str(input_path),
+            str(input_paths[0]),
             vocab_size,
             str(output_path),
             special_tokens,
@@ -163,7 +173,7 @@ def train_bpe_to_file(
         return int(trained_vocab_size), int(merge_count), "rust"
 
     vocab, merges = train_bpe(
-        input_path=input_path,
+        input_path=input_paths,
         vocab_size=vocab_size,
         special_tokens=special_tokens,
     )

@@ -29,6 +29,32 @@ def test_bpe_tokenizer_roundtrip(tmp_path):
     assert tokenizer.decode(ids) == text
 
 
+def test_bpe_trains_from_multiple_files(tmp_path):
+    corpus_a = tmp_path / "a.txt"
+    corpus_b = tmp_path / "b.txt"
+    tokenizer_path = tmp_path / "tokenizer.json"
+    text_a = "High performance computing needs memory locality.\n"
+    text_b = "Distributed training needs careful communication.\n"
+    corpus_a.write_text(text_a, encoding="utf-8")
+    corpus_b.write_text(text_b, encoding="utf-8")
+
+    vocab, merges = train_bpe(
+        input_path=[corpus_a, corpus_b],
+        vocab_size=320,
+        special_tokens=["<|endoftext|>"],
+    )
+    save_bpe(
+        vocab=vocab,
+        merges=merges,
+        path=tokenizer_path,
+        special_tokens=["<|endoftext|>"],
+    )
+
+    tokenizer = ScratchTokenizer.from_file(tokenizer_path)
+    assert tokenizer.decode(tokenizer.encode(text_a, add_special_tokens=False)) == text_a
+    assert tokenizer.decode(tokenizer.encode(text_b, add_special_tokens=False)) == text_b
+
+
 def test_transformer_forward_shape_and_loss():
     config = TransformerConfig(
         vocab_size=128,

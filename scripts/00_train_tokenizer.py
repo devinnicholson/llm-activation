@@ -18,10 +18,8 @@ def main() -> None:
     args = parse_args()
     config = load_config(args.config)
     files = resolve_raw_files(config["paths"]["raw_glob"])
-    if len(files) != 1:
-        raise ValueError("The first from-scratch BPE trainer expects one concatenated text file.")
     vocab_size, merge_count, backend = train_bpe_to_file(
-        input_path=files[0],
+        input_path=files,
         vocab_size=int(config["tokenizer"]["vocab_size"]),
         output_path=config["paths"]["tokenizer"],
         special_tokens=SPECIAL_TOKENS,
