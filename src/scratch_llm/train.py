@@ -289,6 +289,7 @@ def main() -> None:
     last_log_time = time.time()
     train_start_time = last_log_time
     last_iter = start_iter - 1
+    last_log_iter = start_iter - 1
 
     for iter_num in range(start_iter, int(train_cfg["max_iters"])):
         last_iter = iter_num
@@ -371,12 +372,14 @@ def main() -> None:
 
         if iter_num % int(train_cfg["log_interval"]) == 0 and master_process:
             elapsed = time.time() - last_log_time
-            tokens = (
+            steps_since_log = max(iter_num - last_log_iter, 1)
+            tokens_per_step = (
                 int(train_cfg["batch_size"])
                 * transformer_config.context_length
                 * int(train_cfg["gradient_accumulation_steps"])
                 * world_size
             )
+            tokens = tokens_per_step * steps_since_log
             reported_loss = loss.item() * int(train_cfg["gradient_accumulation_steps"])
             print(
                 f"iter={iter_num} loss={reported_loss:.4f} "
@@ -391,12 +394,13 @@ def main() -> None:
                     "loss": reported_loss,
                     "lr": lr,
                     "tokens_per_s": tokens / max(elapsed, 1e-9),
-                    "tokens_per_step": tokens,
+                    "tokens_per_step": tokens_per_step,
                     "world_size": world_size,
                     "parameters": raw_model.parameter_count(),
                 },
             )
             last_log_time = time.time()
+            last_log_iter = iter_num
 
     if master_process and last_iter >= start_iter:
         save_checkpoint(
