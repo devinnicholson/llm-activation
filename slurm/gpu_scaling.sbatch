@@ -17,6 +17,7 @@ export REQUIRE_TORCH=1
 source slurm/cluster_env.sh
 
 CONFIG="${CONFIG:-configs/base_125m.yaml}"
+RESUME="${RESUME:-0}"
 mkdir -p benchmarks/results
 
 echo "Running GPU scaling sweep"
@@ -25,14 +26,18 @@ echo "-------------------------"
 
 for GPUS in 1 2 4; do
     echo "Running with $GPUS GPU(s)"
+    TRAIN_ARGS=(--config "$CONFIG")
+    if [ "$RESUME" = "1" ]; then
+        TRAIN_ARGS+=(--resume)
+    fi
     if [ "$GPUS" -eq 1 ]; then
-        python scripts/02_train.py --config "$CONFIG"
+        python scripts/02_train.py "${TRAIN_ARGS[@]}"
     else
         torchrun \
             --standalone \
             --nnodes=1 \
             --nproc_per_node="$GPUS" \
             scripts/02_train.py \
-            --config "$CONFIG"
+            "${TRAIN_ARGS[@]}"
     fi
 done

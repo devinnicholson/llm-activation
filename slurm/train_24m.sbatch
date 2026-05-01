@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=activation
 #SBATCH --partition=gpu
-#SBATCH --output=train_8m_%j.out
-#SBATCH --error=train_8m_%j.err
+#SBATCH --output=train_24m_%j.out
+#SBATCH --error=train_24m_%j.err
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
-#SBATCH --time=04:00:00
+#SBATCH --mem=96G
+#SBATCH --time=08:00:00
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ export SPACK_ENV_NAME=CS-2050-gpu
 export REQUIRE_TORCH=1
 source slurm/cluster_env.sh
 
-CONFIG="${CONFIG:-configs/tinystories_8m.yaml}"
+CONFIG="${CONFIG:-configs/tinystories_24m.yaml}"
 REBUILD_DATA="${REBUILD_DATA:-1}"
 RESUME="${RESUME:-0}"
 

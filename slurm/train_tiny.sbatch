@@ -15,7 +15,12 @@ cd "${SLURM_SUBMIT_DIR:-$PWD}"
 export SPACK_ENV_NAME=CS-2050-gpu
 export REQUIRE_TORCH=1
 source slurm/cluster_env.sh
+RESUME="${RESUME:-0}"
 
 python scripts/00_train_tokenizer.py --config configs/tiny.yaml
 python scripts/01_prepare_dataset.py --config configs/tiny.yaml
-python scripts/02_train.py --config configs/tiny.yaml
+if [ "$RESUME" = "1" ]; then
+  python scripts/02_train.py --config configs/tiny.yaml --resume
+else
+  python scripts/02_train.py --config configs/tiny.yaml
+fi
