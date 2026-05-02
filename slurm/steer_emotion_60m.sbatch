@@ -19,6 +19,7 @@ source slurm/cluster_env.sh
 EMOTION="${EMOTION:-happy}"
 LAYER="${LAYER:--1}"
 ALPHA="${ALPHA:-2.0}"
+POSITION="${POSITION:-last}"
 PROMPT="${PROMPT:-Once upon a time there was a little robot}"
 
 python -u scripts/06_steer_generation.py \
@@ -28,4 +29,5 @@ python -u scripts/06_steer_generation.py \
   --emotion "$EMOTION" \
   --layer "$LAYER" \
   --alpha "$ALPHA" \
+  --position "$POSITION" \
   --prompt "$PROMPT"
