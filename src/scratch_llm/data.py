@@ -24,27 +24,38 @@ def dtype_for_vocab(vocab_size: int) -> np.dtype:
 def build_token_arrays(
     *,
     raw_files: list[str],
+    val_raw_files: list[str] | None = None,
     tokenizer_path: str | Path,
     train_output: str | Path,
     val_output: str | Path,
     train_ratio: float,
 ) -> dict[str, int | str]:
     tokenizer = ScratchTokenizer.from_file(tokenizer_path)
-    ids: list[int] = []
+    train_ids_list: list[int] = []
 
     for file_name in raw_files:
         text = Path(file_name).read_text(encoding="utf-8")
-        ids.extend(tokenizer.encode(text, add_special_tokens=True))
+        train_ids_list.extend(tokenizer.encode(text, add_special_tokens=True))
 
-    if len(ids) < 100:
+    if len(train_ids_list) < 100:
         raise ValueError("Tokenized corpus is too small; add more text before training.")
 
-    split_idx = int(len(ids) * train_ratio)
-    split_idx = min(max(split_idx, 1), len(ids) - 1)
+    if val_raw_files is None:
+        split_idx = int(len(train_ids_list) * train_ratio)
+        split_idx = min(max(split_idx, 1), len(train_ids_list) - 1)
+        val_ids_list = train_ids_list[split_idx:]
+        train_ids_list = train_ids_list[:split_idx]
+    else:
+        val_ids_list: list[int] = []
+        for file_name in val_raw_files:
+            text = Path(file_name).read_text(encoding="utf-8")
+            val_ids_list.extend(tokenizer.encode(text, add_special_tokens=True))
+        if len(val_ids_list) < 100:
+            raise ValueError("Tokenized validation corpus is too small.")
 
     dtype = dtype_for_vocab(tokenizer.vocab_size)
-    train_ids = np.asarray(ids[:split_idx], dtype=dtype)
-    val_ids = np.asarray(ids[split_idx:], dtype=dtype)
+    train_ids = np.asarray(train_ids_list, dtype=dtype)
+    val_ids = np.asarray(val_ids_list, dtype=dtype)
 
     train_output = Path(train_output)
     val_output = Path(val_output)

@@ -17,6 +17,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", default="configs/tiny.yaml")
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--prompt", default="High performance computing")
+    parser.add_argument("--max-new-tokens", type=int, default=None)
+    parser.add_argument("--temperature", type=float, default=None)
+    parser.add_argument("--top-k", type=int, default=None)
     return parser.parse_args()
 
 
@@ -46,11 +49,20 @@ def main() -> None:
     ids = tokenizer.encode(args.prompt, add_special_tokens=False)
     idx = torch.tensor(ids, dtype=torch.long, device=device)[None, :]
     with torch.no_grad():
+        generation_cfg = config["generation"]
         out = model.generate(
             idx,
-            max_new_tokens=int(config["generation"]["max_new_tokens"]),
-            temperature=float(config["generation"]["temperature"]),
-            top_k=int(config["generation"]["top_k"]),
+            max_new_tokens=(
+                args.max_new_tokens
+                if args.max_new_tokens is not None
+                else int(generation_cfg["max_new_tokens"])
+            ),
+            temperature=(
+                args.temperature
+                if args.temperature is not None
+                else float(generation_cfg["temperature"])
+            ),
+            top_k=args.top_k if args.top_k is not None else int(generation_cfg["top_k"]),
         )
     print(tokenizer.decode(out[0].tolist()))
 

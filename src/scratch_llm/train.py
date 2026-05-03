@@ -188,6 +188,15 @@ def load_checkpoint(
     return int(checkpoint["iter_num"]) + 1, float(checkpoint.get("best_val_loss", "inf"))
 
 
+def resolve_best_checkpoint_path(
+    checkpoint_dir: Path,
+    train_cfg: dict[str, Any],
+) -> Path | None:
+    if not bool(train_cfg.get("save_best_checkpoint", False)):
+        return None
+    return checkpoint_dir / str(train_cfg.get("best_checkpoint_name", "best.pt"))
+
+
 METRIC_FIELDS = [
     "elapsed_s",
     "iter",
@@ -257,6 +266,7 @@ def main() -> None:
 
     checkpoint_dir = Path(paths["checkpoint_dir"])
     checkpoint_path = Path(args.checkpoint) if args.checkpoint else checkpoint_dir / "ckpt.pt"
+    best_checkpoint_path = resolve_best_checkpoint_path(checkpoint_dir, train_cfg)
     metrics_path = Path(args.metrics_path) if args.metrics_path else checkpoint_dir / "metrics.csv"
     if master_process:
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -333,6 +343,17 @@ def main() -> None:
                 },
             )
             should_save = val_improved or bool(train_cfg.get("always_save_checkpoint", False))
+            if best_checkpoint_path is not None and val_improved:
+                save_checkpoint(
+                    raw_model=raw_model,
+                    optimizer=optimizer,
+                    scaler=scaler,
+                    iteration=iter_num,
+                    best_val_loss=best_val_loss,
+                    config=config,
+                    checkpoint_path=best_checkpoint_path,
+                )
+                print(f"saved_best_checkpoint={best_checkpoint_path} iter={iter_num}")
             if should_save:
                 save_checkpoint(
                     raw_model=raw_model,
