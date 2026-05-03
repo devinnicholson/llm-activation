@@ -67,7 +67,7 @@ def build_token_arrays(
     return {
         "vocab_size": tokenizer.vocab_size,
         "dtype": str(dtype),
-        "total_tokens": len(ids),
+        "total_tokens": int(train_ids.shape[0] + val_ids.shape[0]),
         "train_tokens": int(train_ids.shape[0]),
         "val_tokens": int(val_ids.shape[0]),
     }
