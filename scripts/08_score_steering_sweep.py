@@ -98,6 +98,24 @@ def keyword_count(text: str, emotion: str) -> int:
     return sum(len(re.findall(rf"\b{re.escape(term)}\b", word_text)) for term in LEXICON[emotion])
 
 
+def iter_json_records(path: Path):
+    decoder = json.JSONDecoder()
+    with path.open("r", encoding="utf-8") as handle:
+        for line_num, line in enumerate(handle, start=1):
+            text = line.strip()
+            while text:
+                try:
+                    record, end_idx = decoder.raw_decode(text)
+                except json.JSONDecodeError as exc:
+                    raise json.JSONDecodeError(
+                        f"{exc.msg} while parsing {path} line {line_num}",
+                        exc.doc,
+                        exc.pos,
+                    ) from exc
+                yield record
+                text = text[end_idx:].lstrip()
+
+
 def main() -> None:
     args = parse_args()
     input_path = Path(args.input)
@@ -108,27 +126,25 @@ def main() -> None:
     )
     groups: dict[tuple[str, int, float, str], list[dict[str, float]]] = defaultdict(list)
 
-    with input_path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            record = json.loads(line)
-            emotion = record["emotion"]
-            baseline_hits = keyword_count(record["baseline_text"], emotion)
-            steered_hits = keyword_count(record["steered_text"], emotion)
-            groups[
-                (
-                    emotion,
-                    int(record["layer"]),
-                    float(record["alpha"]),
-                    record["position"],
-                )
-            ].append(
-                {
-                    "baseline_hits": baseline_hits,
-                    "steered_hits": steered_hits,
-                    "delta": steered_hits - baseline_hits,
-                    "elapsed_s": float(record["elapsed_s"]),
-                }
+    for record in iter_json_records(input_path):
+        emotion = record["emotion"]
+        baseline_hits = keyword_count(record["baseline_text"], emotion)
+        steered_hits = keyword_count(record["steered_text"], emotion)
+        groups[
+            (
+                emotion,
+                int(record["layer"]),
+                float(record["alpha"]),
+                record["position"],
             )
+        ].append(
+            {
+                "baseline_hits": baseline_hits,
+                "steered_hits": steered_hits,
+                "delta": steered_hits - baseline_hits,
+                "elapsed_s": float(record["elapsed_s"]),
+            }
+        )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     rows = []
