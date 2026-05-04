@@ -16,6 +16,9 @@ export SPACK_ENV_NAME=CS-2050-gpu
 export REQUIRE_TORCH=1
 source slurm/cluster_env.sh
 
+CONFIG="${CONFIG:-configs/tinystories_60m_overnight.yaml}"
+CHECKPOINT="${CHECKPOINT:-checkpoints/tinystories_60m_overnight/ckpt.pt}"
+VECTORS="${VECTORS:-benchmarks/results/emotion_vectors_60m.pt}"
 EMOTION="${EMOTION:-happy}"
 LAYER="${LAYER:--1}"
 ALPHA="${ALPHA:-2.0}"
@@ -23,9 +26,9 @@ POSITION="${POSITION:-last}"
 PROMPT="${PROMPT:-Once upon a time there was a little robot}"
 
 python -u scripts/06_steer_generation.py \
-  --config configs/tinystories_60m_overnight.yaml \
-  --checkpoint checkpoints/tinystories_60m_overnight/ckpt.pt \
-  --vectors benchmarks/results/emotion_vectors_60m.pt \
+  --config "$CONFIG" \
+  --checkpoint "$CHECKPOINT" \
+  --vectors "$VECTORS" \
   --emotion "$EMOTION" \
   --layer "$LAYER" \
   --alpha "$ALPHA" \

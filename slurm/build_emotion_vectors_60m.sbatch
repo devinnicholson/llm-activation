@@ -16,8 +16,13 @@ export SPACK_ENV_NAME=CS-2050-gpu
 export REQUIRE_TORCH=1
 source slurm/cluster_env.sh
 
+CONFIG="${CONFIG:-configs/tinystories_60m_overnight.yaml}"
+CHECKPOINT="${CHECKPOINT:-checkpoints/tinystories_60m_overnight/ckpt.pt}"
+OUTPUT="${OUTPUT:-${VECTORS:-benchmarks/results/emotion_vectors_60m.pt}}"
+LAYERS="${LAYERS:-all}"
+
 python -u scripts/05_build_emotion_vectors.py \
-  --config configs/tinystories_60m_overnight.yaml \
-  --checkpoint checkpoints/tinystories_60m_overnight/ckpt.pt \
-  --output benchmarks/results/emotion_vectors_60m.pt \
-  --layers all
+  --config "$CONFIG" \
+  --checkpoint "$CHECKPOINT" \
+  --output "$OUTPUT" \
+  --layers "$LAYERS"

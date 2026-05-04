@@ -16,6 +16,9 @@ export SPACK_ENV_NAME=CS-2050-gpu
 export REQUIRE_TORCH=1
 source slurm/cluster_env.sh
 
+CONFIG="${CONFIG:-configs/tinystories_60m_overnight.yaml}"
+CHECKPOINT="${CHECKPOINT:-checkpoints/tinystories_60m_overnight/ckpt.pt}"
+VECTORS="${VECTORS:-benchmarks/results/emotion_vectors_60m.pt}"
 EMOTIONS="${EMOTIONS:-happy,sad,scared,calm,curious}"
 LAYERS="${LAYERS:-6,9,11}"
 ALPHAS="${ALPHAS:-2,3}"
@@ -24,9 +27,9 @@ MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-120}"
 OUTPUT="${OUTPUT:-benchmarks/results/steering_sweep_60m_${SLURM_JOB_ID}.jsonl}"
 
 python -u scripts/07_steering_sweep.py \
-  --config configs/tinystories_60m_overnight.yaml \
-  --checkpoint checkpoints/tinystories_60m_overnight/ckpt.pt \
-  --vectors benchmarks/results/emotion_vectors_60m.pt \
+  --config "$CONFIG" \
+  --checkpoint "$CHECKPOINT" \
+  --vectors "$VECTORS" \
   --output "$OUTPUT" \
   --emotions "$EMOTIONS" \
   --layers "$LAYERS" \
