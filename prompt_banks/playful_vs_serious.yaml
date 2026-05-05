@@ -1,0 +1,23 @@
+baseline: neutral
+targets:
+  - playful
+  - serious
+prompts:
+  neutral:
+    - "The child said there was something in the room."
+    - "Lily looked at the machine and talked to her friend."
+    - "The dog heard a sound near the door."
+    - "The robot made a mistake while playing outside."
+    - "A small child told a grown-up what happened."
+  playful:
+    - "The child shouted that the tiny cookie was so scary, then laughed."
+    - "Lily said the machine looked terrifying, but she giggled and poked it."
+    - "The dog barked at the silly shadow and wagged his tail."
+    - "The robot yelled oh no in a funny voice and laughed at its mistake."
+    - "The child pretended to be worried, then smiled because it was a joke."
+  serious:
+    - "The child said they were scared because they heard something outside."
+    - "Lily worried that the machine might be dangerous and stepped back."
+    - "The dog heard a sound near the door and hid quietly."
+    - "The robot made a mistake and felt afraid that someone could get hurt."
+    - "The child told a grown-up the problem because it seemed serious."

@@ -1,0 +1,44 @@
+baseline: neutral
+targets:
+  - happy
+  - sad
+  - scared
+  - calm
+  - curious
+prompts:
+  neutral:
+    - "Once there was a child walking through the room."
+    - "A small animal sat near the tree and looked around."
+    - "The toy was on the table while the sun was outside."
+    - "A person opened the door and saw a box."
+    - "The day started and everyone went to the park."
+  happy:
+    - "The little girl smiled because she felt happy and loved."
+    - "The child laughed with joy after finding a wonderful toy."
+    - "Everyone cheered and felt bright, warm, and excited."
+    - "The puppy wagged its tail because it was so glad."
+    - "The friends danced together and had a very happy day."
+  sad:
+    - "The little boy felt sad because his favorite toy was gone."
+    - "The child cried softly and missed her friend."
+    - "Everyone felt lonely when the rain ruined the party."
+    - "The puppy looked down because it felt sad and forgotten."
+    - "The girl sat quietly with tears in her eyes."
+  scared:
+    - "The child was scared when the dark room made a loud sound."
+    - "The little dog trembled because it heard thunder outside."
+    - "Everyone felt afraid when the shadow moved near the door."
+    - "The boy hid under the blanket because he was frightened."
+    - "The girl held her toy tightly and felt very scared."
+  calm:
+    - "The child felt calm while sitting beside the quiet lake."
+    - "The puppy rested softly and breathed slowly."
+    - "Everyone spoke gently and the room felt peaceful."
+    - "The girl smiled calmly and listened to the wind."
+    - "The boy felt safe, quiet, and relaxed."
+  curious:
+    - "The child felt curious and wanted to know what was inside."
+    - "The little robot wondered how the strange machine worked."
+    - "Everyone asked questions about the shiny new box."
+    - "The girl looked closely because she wanted to learn more."
+    - "The boy explored the garden with curious eyes."

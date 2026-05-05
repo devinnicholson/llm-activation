@@ -9,6 +9,7 @@ from pathlib import Path
 import torch
 
 from scratch_llm.config import load_config
+from scratch_llm.generation import EOS_TOKEN, resolve_eos_token_id
 from scratch_llm.model import TransformerConfig, TransformerLM
 from scratch_llm.tokenizer import ScratchTokenizer
 
@@ -51,6 +52,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-new-tokens", type=int, default=None)
     parser.add_argument("--temperature", type=float, default=None)
     parser.add_argument("--top-k", type=int, default=None)
+    parser.add_argument(
+        "--stop-at-eos",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Stop generation after sampling <|endoftext|>. Defaults to "
+            "generation.stop_at_eos when configured, otherwise false."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=1337)
     parser.add_argument(
         "--prompt",
@@ -108,9 +118,25 @@ def main() -> None:
             print(f"Loading {model_key}: {checkpoint_path}")
             config, tokenizer, model, device = load_model(entry["config"], str(checkpoint_path))
             generation_cfg = config["generation"]
-            max_new_tokens = args.max_new_tokens or int(generation_cfg["max_new_tokens"])
-            temperature = args.temperature or float(generation_cfg["temperature"])
+            max_new_tokens = (
+                args.max_new_tokens
+                if args.max_new_tokens is not None
+                else int(generation_cfg["max_new_tokens"])
+            )
+            temperature = (
+                args.temperature
+                if args.temperature is not None
+                else float(generation_cfg["temperature"])
+            )
             top_k = args.top_k if args.top_k is not None else int(generation_cfg["top_k"])
+            stop_at_eos = (
+                args.stop_at_eos
+                if args.stop_at_eos is not None
+                else bool(generation_cfg.get("stop_at_eos", False))
+            )
+            stop_token_id = resolve_eos_token_id(tokenizer) if stop_at_eos else None
+            if stop_at_eos and stop_token_id is None:
+                raise ValueError(f"Could not resolve {EOS_TOKEN!r} to a single token id.")
             parameter_count = model.parameter_count()
 
             for prompt_idx, prompt in enumerate(prompts):
@@ -127,6 +153,7 @@ def main() -> None:
                         max_new_tokens=max_new_tokens,
                         temperature=temperature,
                         top_k=top_k,
+                        stop_token_id=stop_token_id,
                     )
                 if device.type == "cuda":
                     torch.cuda.synchronize()
@@ -142,6 +169,7 @@ def main() -> None:
                     "max_new_tokens": max_new_tokens,
                     "temperature": temperature,
                     "top_k": top_k,
+                    "stop_at_eos": stop_at_eos,
                     "device": str(device),
                 }
                 handle.write(json.dumps(record) + "\n")

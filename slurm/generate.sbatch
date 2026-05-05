@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=activation
+#SBATCH --job-name=generate
 #SBATCH --partition=gpu
-#SBATCH --output=steer_100m_full_%j.out
-#SBATCH --error=steer_100m_full_%j.err
+#SBATCH --output=generate_%j.out
+#SBATCH --error=generate_%j.err
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
@@ -12,14 +12,12 @@
 set -euo pipefail
 
 cd "${SLURM_SUBMIT_DIR:-$PWD}"
-export SPACK_ENV_NAME=CS-2050-gpu
-export REQUIRE_TORCH=1
+export SPACK_ENV_NAME="${SPACK_ENV_NAME:-CS-2050-gpu}"
+export REQUIRE_TORCH="${REQUIRE_TORCH:-1}"
 source slurm/cluster_env.sh
 
-EMOTION="${EMOTION:-scared}"
-LAYER="${LAYER:-7}"
-ALPHA="${ALPHA:-2.0}"
-POSITION="${POSITION:-all}"
+CONFIG="${CONFIG:-configs/tinystories_100m_full.yaml}"
+CHECKPOINT="${CHECKPOINT:-checkpoints/tinystories_100m_full/best.pt}"
 PROMPT="${PROMPT:-Once upon a time there was a little robot}"
 MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-300}"
 TEMPERATURE="${TEMPERATURE:-0.8}"
@@ -33,14 +31,18 @@ else
   stop_args+=(--no-stop-at-eos)
 fi
 
-python -u scripts/06_steer_generation.py \
-  --config configs/tinystories_100m_full.yaml \
-  --checkpoint checkpoints/tinystories_100m_full/best.pt \
-  --vectors benchmarks/results/emotion_vectors_100m_full.pt \
-  --emotion "$EMOTION" \
-  --layer "$LAYER" \
-  --alpha "$ALPHA" \
-  --position "$POSITION" \
+echo "Resolved generate settings:"
+printf '  CONFIG=%q\n' "$CONFIG"
+printf '  CHECKPOINT=%q\n' "$CHECKPOINT"
+printf '  PROMPT=%q\n' "$PROMPT"
+printf '  MAX_NEW_TOKENS=%q\n' "$MAX_NEW_TOKENS"
+printf '  TEMPERATURE=%q\n' "$TEMPERATURE"
+printf '  TOP_K=%q\n' "$TOP_K"
+printf '  STOP_AT_EOS=%q\n' "$STOP_AT_EOS"
+
+python -u scripts/03_generate.py \
+  --config "$CONFIG" \
+  --checkpoint "$CHECKPOINT" \
   --prompt "$PROMPT" \
   --max-new-tokens "$MAX_NEW_TOKENS" \
   --temperature "$TEMPERATURE" \

@@ -24,6 +24,17 @@ LAYER="${LAYER:--1}"
 ALPHA="${ALPHA:-2.0}"
 POSITION="${POSITION:-last}"
 PROMPT="${PROMPT:-Once upon a time there was a little robot}"
+MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-260}"
+TEMPERATURE="${TEMPERATURE:-0.8}"
+TOP_K="${TOP_K:-100}"
+STOP_AT_EOS="${STOP_AT_EOS:-1}"
+
+stop_args=()
+if [[ "$STOP_AT_EOS" == "1" || "$STOP_AT_EOS" == "true" || "$STOP_AT_EOS" == "TRUE" ]]; then
+  stop_args+=(--stop-at-eos)
+else
+  stop_args+=(--no-stop-at-eos)
+fi
 
 python -u scripts/06_steer_generation.py \
   --config "$CONFIG" \
@@ -33,4 +44,8 @@ python -u scripts/06_steer_generation.py \
   --layer "$LAYER" \
   --alpha "$ALPHA" \
   --position "$POSITION" \
-  --prompt "$PROMPT"
+  --prompt "$PROMPT" \
+  --max-new-tokens "$MAX_NEW_TOKENS" \
+  --temperature "$TEMPERATURE" \
+  --top-k "$TOP_K" \
+  "${stop_args[@]}"

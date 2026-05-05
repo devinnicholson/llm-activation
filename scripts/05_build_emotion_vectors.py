@@ -57,14 +57,25 @@ PROMPT_BANK = {
 }
 
 
+DEFAULT_EMOTIONS = "happy,sad,scared,calm,curious"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build contrastive emotion activation vectors.")
     parser.add_argument("--config", default="configs/tinystories_60m_overnight.yaml")
     parser.add_argument("--checkpoint", default=None)
     parser.add_argument("--output", default="benchmarks/results/emotion_vectors_60m.pt")
     parser.add_argument("--layers", default="all")
-    parser.add_argument("--emotions", default="happy,sad,scared,calm,curious")
-    parser.add_argument("--baseline", default="neutral")
+    parser.add_argument(
+        "--prompt-bank",
+        default=None,
+        help=(
+            "Optional YAML prompt bank. Either a mapping of prompt_key -> list[str], "
+            "or a mapping with prompts/baseline/targets keys."
+        ),
+    )
+    parser.add_argument("--emotions", default=None)
+    parser.add_argument("--baseline", default=None)
     parser.add_argument("--pooling", choices=["mean", "last"], default="mean")
     parser.add_argument("--no-normalize", action="store_true")
     return parser.parse_args()
@@ -80,6 +91,30 @@ def resolve_device(requested: str) -> torch.device:
     return torch.device(requested)
 
 
+def load_prompt_bank(path: str | None) -> tuple[dict[str, list[str]], str | None, list[str] | None]:
+    if path is None:
+        return PROMPT_BANK, None, None
+
+    payload = load_config(path)
+    prompts = payload.get("prompts", payload)
+    if not isinstance(prompts, dict):
+        raise ValueError(f"Prompt bank {path} must contain a prompt mapping.")
+
+    prompt_bank: dict[str, list[str]] = {}
+    for key, value in prompts.items():
+        if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+            raise ValueError(f"Prompt bank key {key!r} must be a list of strings.")
+        prompt_bank[str(key)] = value
+
+    baseline = payload.get("baseline") if "prompts" in payload else None
+    targets = payload.get("targets") if "prompts" in payload else None
+    if targets is not None:
+        if not isinstance(targets, list) or not all(isinstance(item, str) for item in targets):
+            raise ValueError("Prompt bank targets must be a list of strings.")
+        targets = [str(item) for item in targets]
+    return prompt_bank, baseline, targets
+
+
 def main() -> None:
     args = parse_args()
     config = load_config(args.config)
@@ -93,14 +128,23 @@ def main() -> None:
     model.to(device)
     model.eval()
 
+    prompt_bank, bank_baseline, bank_targets = load_prompt_bank(args.prompt_bank)
+    baseline = args.baseline or bank_baseline or "neutral"
+    if args.emotions:
+        emotion_spec = args.emotions
+    elif bank_targets:
+        emotion_spec = ",".join(bank_targets)
+    else:
+        emotion_spec = DEFAULT_EMOTIONS
+
     layers = parse_layers(args.layers, num_layers=model.config.num_layers)
-    emotions = [item.strip() for item in args.emotions.split(",") if item.strip()]
+    emotions = [item.strip() for item in emotion_spec.split(",") if item.strip()]
     vectors = build_contrast_vectors(
         model=model,
         tokenizer=tokenizer,
-        prompt_bank=PROMPT_BANK,
+        prompt_bank=prompt_bank,
         emotions=emotions,
-        baseline_key=args.baseline,
+        baseline_key=baseline,
         layers=layers,
         device=device,
         pooling=args.pooling,
@@ -113,15 +157,16 @@ def main() -> None:
         "vectors": vectors,
         "config": args.config,
         "checkpoint": checkpoint_path,
+        "prompt_bank_path": args.prompt_bank,
         "layers": layers,
         "emotions": emotions,
-        "baseline": args.baseline,
+        "baseline": baseline,
         "pooling": args.pooling,
         "normalized": not args.no_normalize,
         "d_model": model.config.d_model,
         "num_layers": model.config.num_layers,
         "parameter_count": model.parameter_count(),
-        "prompt_bank": PROMPT_BANK,
+        "prompt_bank": prompt_bank,
     }
     torch.save(payload, output_path)
     print(f"wrote {output_path}")

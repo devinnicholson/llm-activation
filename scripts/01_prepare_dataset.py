@@ -27,6 +27,7 @@ def main() -> None:
         train_output=config["paths"]["train_data"],
         val_output=config["paths"]["val_data"],
         train_ratio=float(config["data"]["train_ratio"]),
+        progress=True,
     )
     metadata["raw_files"] = files
     if val_files is not None:

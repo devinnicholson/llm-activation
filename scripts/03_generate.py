@@ -6,6 +6,7 @@ import argparse
 import torch
 
 from scratch_llm.config import load_config
+from scratch_llm.generation import EOS_TOKEN, resolve_eos_token_id
 from scratch_llm.model import TransformerConfig, TransformerLM
 from scratch_llm.tokenizer import ScratchTokenizer
 
@@ -20,6 +21,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-new-tokens", type=int, default=None)
     parser.add_argument("--temperature", type=float, default=None)
     parser.add_argument("--top-k", type=int, default=None)
+    parser.add_argument(
+        "--stop-at-eos",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Stop generation after sampling <|endoftext|>. Defaults to "
+            "generation.stop_at_eos when configured, otherwise false."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -46,10 +56,19 @@ def main() -> None:
     model.to(device)
     model.eval()
 
+    generation_cfg = config["generation"]
+    stop_at_eos = (
+        args.stop_at_eos
+        if args.stop_at_eos is not None
+        else bool(generation_cfg.get("stop_at_eos", False))
+    )
+    stop_token_id = resolve_eos_token_id(tokenizer) if stop_at_eos else None
+    if stop_at_eos and stop_token_id is None:
+        raise ValueError(f"Could not resolve {EOS_TOKEN!r} to a single token id.")
+
     ids = tokenizer.encode(args.prompt, add_special_tokens=False)
     idx = torch.tensor(ids, dtype=torch.long, device=device)[None, :]
     with torch.no_grad():
-        generation_cfg = config["generation"]
         out = model.generate(
             idx,
             max_new_tokens=(
@@ -63,6 +82,7 @@ def main() -> None:
                 else float(generation_cfg["temperature"])
             ),
             top_k=args.top_k if args.top_k is not None else int(generation_cfg["top_k"]),
+            stop_token_id=stop_token_id,
         )
     print(tokenizer.decode(out[0].tolist()))
 

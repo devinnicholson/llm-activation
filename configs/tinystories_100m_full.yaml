@@ -57,3 +57,4 @@ generation:
   max_new_tokens: 300
   temperature: 0.8
   top_k: 100
+  stop_at_eos: true

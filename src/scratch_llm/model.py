@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 
 import torch
@@ -239,7 +240,30 @@ class TransformerLM(nn.Module):
         max_new_tokens: int,
         temperature: float = 1.0,
         top_k: int | None = None,
+        stop_token_id: int | None = None,
+        stop_token_ids: int | Sequence[int] | torch.Tensor | None = None,
     ) -> torch.Tensor:
+        if stop_token_id is not None:
+            if stop_token_ids is not None:
+                raise ValueError("Pass either stop_token_id or stop_token_ids, not both.")
+            stop_token_ids = stop_token_id
+
+        stop_ids: torch.Tensor | None = None
+        if stop_token_ids is not None:
+            if isinstance(stop_token_ids, torch.Tensor):
+                stop_ids = stop_token_ids.to(device=idx.device, dtype=idx.dtype).flatten()
+            elif isinstance(stop_token_ids, int):
+                stop_ids = torch.tensor([stop_token_ids], device=idx.device, dtype=idx.dtype)
+            else:
+                stop_ids = torch.tensor(list(stop_token_ids), device=idx.device, dtype=idx.dtype)
+            if stop_ids.numel() == 0:
+                stop_ids = None
+
+        done = (
+            torch.zeros(idx.size(0), device=idx.device, dtype=torch.bool)
+            if stop_ids is not None
+            else None
+        )
         for _ in range(max_new_tokens):
             idx_cond = (
                 idx
@@ -247,13 +271,24 @@ class TransformerLM(nn.Module):
                 else idx[:, -self.config.context_length :]
             )
             logits, _ = self(idx_cond)
-            logits = logits[:, -1, :] / temperature
-            if top_k is not None:
-                values, _ = torch.topk(logits, min(top_k, logits.size(-1)))
-                logits[logits < values[:, [-1]]] = -torch.inf
-            probs = softmax(logits, dim=-1)
-            idx_next = torch.multinomial(probs, num_samples=1)
+            logits = logits[:, -1, :]
+            if temperature <= 0:
+                idx_next = torch.argmax(logits, dim=-1, keepdim=True)
+            else:
+                logits = logits / temperature
+                if top_k is not None:
+                    values, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                    logits[logits < values[:, [-1]]] = -torch.inf
+                probs = softmax(logits, dim=-1)
+                idx_next = torch.multinomial(probs, num_samples=1)
+            if done is not None and done.any():
+                idx_next = idx_next.clone()
+                idx_next[done] = stop_ids[0]
             idx = torch.cat((idx, idx_next), dim=1)
+            if done is not None:
+                done |= (idx_next == stop_ids.view(1, -1)).any(dim=1)
+                if done.all():
+                    break
         return idx
 
     def parameter_count(self) -> int:

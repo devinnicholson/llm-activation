@@ -6,7 +6,6 @@ import shutil
 import urllib.request
 from pathlib import Path
 
-
 FILES = {
     "TinyStoriesV2-GPT4-train.txt": (
         "https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/"

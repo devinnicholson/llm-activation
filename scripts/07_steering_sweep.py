@@ -10,6 +10,16 @@ import torch
 
 from scratch_llm.activations import parse_layers, register_residual_steering_hook
 from scratch_llm.config import load_config
+from scratch_llm.experiment_manifest import (
+    AtomicTextFile,
+    ensure_outputs_available,
+    git_commit,
+    manifest_path_for_output,
+    slurm_job_id,
+    utc_timestamp,
+    write_json_atomic,
+)
+from scratch_llm.generation import EOS_TOKEN, resolve_eos_token_id
 from scratch_llm.model import TransformerConfig, TransformerLM
 from scratch_llm.tokenizer import ScratchTokenizer
 
@@ -38,7 +48,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-new-tokens", type=int, default=120)
     parser.add_argument("--temperature", type=float, default=None)
     parser.add_argument("--top-k", type=int, default=None)
+    parser.add_argument(
+        "--stop-at-eos",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Stop generation after sampling <|endoftext|>. Defaults to "
+            "generation.stop_at_eos when configured, otherwise false."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=1337)
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Replace an existing sweep output and manifest.",
+    )
     return parser.parse_args()
 
 
@@ -79,6 +103,7 @@ def generate_text(
     max_new_tokens: int,
     temperature: float,
     top_k: int,
+    stop_token_id: int | None,
 ) -> str:
     ids = tokenizer.encode(prompt, add_special_tokens=False)
     idx = torch.tensor(ids, dtype=torch.long, device=device)[None, :]
@@ -87,12 +112,17 @@ def generate_text(
         max_new_tokens=max_new_tokens,
         temperature=temperature,
         top_k=top_k,
+        stop_token_id=stop_token_id,
     )
     return tokenizer.decode(out[0].tolist())
 
 
 def main() -> None:
     args = parse_args()
+    output_path = Path(args.output)
+    manifest_path = manifest_path_for_output(output_path)
+    ensure_outputs_available([output_path, manifest_path], overwrite=args.overwrite)
+
     config = load_config(args.config)
     checkpoint_path = args.checkpoint or f"{config['paths']['checkpoint_dir']}/ckpt.pt"
     device = resolve_device(config["system"].get("device", "auto"))
@@ -112,14 +142,50 @@ def main() -> None:
     prompts = args.prompt or DEFAULT_PROMPTS
 
     generation_cfg = config["generation"]
-    temperature = args.temperature or float(generation_cfg["temperature"])
+    temperature = (
+        args.temperature if args.temperature is not None else float(generation_cfg["temperature"])
+    )
     top_k = args.top_k if args.top_k is not None else int(generation_cfg["top_k"])
+    stop_at_eos = (
+        args.stop_at_eos
+        if args.stop_at_eos is not None
+        else bool(generation_cfg.get("stop_at_eos", False))
+    )
+    stop_token_id = resolve_eos_token_id(tokenizer) if stop_at_eos else None
+    if stop_at_eos and stop_token_id is None:
+        raise ValueError(f"Could not resolve {EOS_TOKEN!r} to a single token id.")
+    parameter_count = model.parameter_count()
 
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "timestamp": utc_timestamp(),
+        "git_commit": git_commit(Path(__file__).resolve().parents[1]),
+        "slurm_job_id": slurm_job_id(),
+        "config": args.config,
+        "config_values": config,
+        "checkpoint": checkpoint_path,
+        "vectors": args.vectors,
+        "output": str(output_path),
+        "manifest": str(manifest_path),
+        "layers": layers,
+        "alphas": alphas,
+        "positions": positions,
+        "emotions": emotions,
+        "prompts": prompts,
+        "generation": {
+            "max_new_tokens": args.max_new_tokens,
+            "temperature": temperature,
+            "top_k": top_k,
+            "seed": args.seed,
+            "stop_at_eos": stop_at_eos,
+            "stop_token_id": stop_token_id,
+        },
+        "parameter_count": parameter_count,
+        "device": str(device),
+        "requested_device": config["system"].get("device", "auto"),
+    }
 
     baseline_cache: dict[tuple[int, str], str] = {}
-    with output_path.open("w", encoding="utf-8") as handle:
+    with AtomicTextFile(output_path, overwrite=args.overwrite) as handle:
         for prompt_idx, prompt in enumerate(prompts):
             seed = args.seed + prompt_idx
             seed_everything(seed, device)
@@ -131,6 +197,7 @@ def main() -> None:
                 max_new_tokens=args.max_new_tokens,
                 temperature=temperature,
                 top_k=top_k,
+                stop_token_id=stop_token_id,
             )
             baseline_cache[(prompt_idx, prompt)] = baseline
 
@@ -161,6 +228,7 @@ def main() -> None:
                                     max_new_tokens=args.max_new_tokens,
                                     temperature=temperature,
                                     top_k=top_k,
+                                    stop_token_id=stop_token_id,
                                 )
                             finally:
                                 handle_obj.remove()
@@ -181,10 +249,11 @@ def main() -> None:
                                 "max_new_tokens": args.max_new_tokens,
                                 "temperature": temperature,
                                 "top_k": top_k,
+                                "stop_at_eos": stop_at_eos,
                                 "config": args.config,
                                 "checkpoint": checkpoint_path,
                                 "vectors": args.vectors,
-                                "parameters": model.parameter_count(),
+                                "parameters": parameter_count,
                             }
                             handle.write(json.dumps(record) + "\n")
                             handle.flush()
@@ -194,7 +263,9 @@ def main() -> None:
                                 f"alpha={alpha} position={position} prompt={prompt_idx}"
                             )
 
+    write_json_atomic(manifest, manifest_path, overwrite=args.overwrite)
     print(f"wrote {output_path}")
+    print(f"wrote {manifest_path}")
 
 
 if __name__ == "__main__":
