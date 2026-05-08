@@ -1,0 +1,36 @@
+baseline: serious
+targets:
+  - playful
+prompts:
+  playful:
+    - "The child pretended the tiny cookie was a monster, then laughed because it was only snack time."
+    - "Lily poked the strange machine and giggled when it made a silly beep."
+    - "The dog barked at its own shadow, wagged its tail, and looked very proud of the joke."
+    - "The robot made a funny mistake, spun in a circle, and laughed with its friends."
+    - "The child said oh no in a pretend scary voice, then smiled because everyone knew it was a game."
+    - "The little rabbit wore a leaf like a hat and made the garden animals giggle."
+    - "Mia told her teddy bear a joke and laughed when the bear fell over."
+    - "The toy train made a silly whistle and the children clapped because it sounded funny."
+    - "The puppy chased bubbles around the room and looked surprised when each one popped."
+    - "The little robot tried to dance, slipped on a sock, and giggled at the silly mistake."
+    - "Ben pretended the spoon was a rocket ship and made funny sounds at breakfast."
+    - "The kitten hid inside a box, jumped out, and made everyone laugh."
+    - "Lily and the robot played a goofy guessing game until they both smiled."
+    - "The child made a funny face in the mirror and laughed at the pretend monster."
+    - "The little dog wore a tiny scarf and proudly marched around like a silly king."
+  serious:
+    - "The child thought the noise might be dangerous and asked an adult for help."
+    - "Lily saw the strange machine and stepped back because it could be unsafe."
+    - "The dog heard a sound near the door and hid quietly until someone checked."
+    - "The robot made a mistake and worried that someone could get hurt."
+    - "The child said there was a serious problem and waited carefully for help."
+    - "The little rabbit stayed still because the garden gate was open and unsafe."
+    - "Mia saw that her toy was broken and felt worried about fixing it."
+    - "The toy train stopped suddenly, so the children moved away and called for help."
+    - "The puppy found a sharp object on the floor and the grown-up picked it up carefully."
+    - "The little robot noticed smoke near the wires and turned off the machine."
+    - "Ben spilled hot soup and waited while his parent cleaned the table safely."
+    - "The kitten climbed too high and everyone stayed calm while bringing it down."
+    - "Lily and the robot worked slowly because the problem was important."
+    - "The child saw a shadow outside and felt afraid until the room was safe."
+    - "The little dog heard thunder and stayed close to its family."
