@@ -16,10 +16,17 @@ data/raw/*
 checkpoints/
 benchmarks/results/
 colab_bundle/
+*.pt
+*.pth
+*.safetensors
+*.bin
+*.tar.gz
 report/figures/*.png
 report/figures/*.pdf
 
 *.log
+*.out
+*.err
 slurm-*.out
 wandb/
 
