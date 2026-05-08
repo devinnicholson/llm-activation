@@ -15,6 +15,7 @@ data/raw/*
 !data/raw/sample_corpus.txt
 checkpoints/
 benchmarks/results/
+colab_bundle/
 report/figures/*.png
 report/figures/*.pdf
 
