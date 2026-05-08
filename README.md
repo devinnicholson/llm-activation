@@ -1,6 +1,8 @@
 # LLM Activation Steering From Scratch
 
-I built and trained a TinyStories language model stack from scratch on an HPC cluster, then added tools to steer the model's behavior from inside its activations.
+I trained a 107M parameter TinyStories language model from scratch, then built activation steering tools that let me shift its generations toward a playful style from inside the model instead of changing the prompt.
+
+The idea was to see if I could find a direction in the model's hidden states that controlled tone, then turn that direction up during generation and watch the same prompt produce a different kind of story. I plan to use this as a starting point for alignment research because it gives me a way to inspect where behavior lives inside a model. If I can find directions for playful vs serious, the next step is asking whether similar internal directions exist for honesty, refusal, uncertainty, sycophancy, or harmful intent, and whether we can steer those behaviors in a controlled way during generation.
 
 [Open the Colab demo](https://colab.research.google.com/github/devinnicholson/llm-activation/blob/main/notebooks/playful_steering_colab.ipynb)
 
