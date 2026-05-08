@@ -54,6 +54,16 @@ Baseline generation stays closer to the original TinyStories continuation. The s
 
 The steering vector is added directly inside the model during generation.
 
+## What To Expect From The Demo
+
+The default playful setting keeps the same prompt and shifts the continuation toward a sillier story.
+
+![Playful steering demo output](assets/demo/playful-steering-output.png)
+
+The same interface can also test the serious vector and compare how a different hidden-state direction changes the continuation.
+
+![Serious steering demo output](assets/demo/serious-steering-output.png)
+
 ## Google Colab Demo
 
 GitHub stores the code and notebook. Google Drive stores the exported model bundle.
@@ -149,13 +159,3 @@ slurm/          cluster job scripts
 notebooks/      Colab demo
 tests/          smoke and correctness tests
 ```
-
-## Project Framing
-
-The project uses a Google Colab plus NVIDIA CUDA backed HPC workflow.
-
-- training and vector extraction run on the cluster GPU environment
-- exported model bundles move to Google Drive
-- Colab provides an interactive demo anyone can run
-
-I am framing this as a focused activation steering result. The model was trained from scratch on TinyStories, and a learned direction in its hidden states can push generations toward a more playful narrative style.
