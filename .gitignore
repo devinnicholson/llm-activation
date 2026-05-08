@@ -8,6 +8,7 @@ __pycache__/
 .DS_Store
 
 *.md
+!/README.md
 
 data/processed/
 data/raw/*
