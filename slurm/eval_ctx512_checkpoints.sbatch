@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
-#SBATCH --time=01:00:00
+#SBATCH --time=02:00:00
 
 set -euo pipefail
 
@@ -42,9 +42,19 @@ eval_one \
   "current_107m_best"
 
 eval_one \
+  "configs/tinystories_100m_full_ctx512.yaml" \
+  "checkpoints/tinystories_100m_full_ctx512/ckpt.pt" \
+  "current_107m_final"
+
+eval_one \
   "configs/tinystories_125m_full_ctx512.yaml" \
   "checkpoints/tinystories_125m_full_ctx512/best.pt" \
   "current_125m_best"
+
+eval_one \
+  "configs/tinystories_125m_full_ctx512.yaml" \
+  "checkpoints/tinystories_125m_full_ctx512/ckpt.pt" \
+  "current_125m_final"
 
 eval_one \
   "configs/tinystories_125m_full_ctx512_continue.yaml" \
@@ -52,6 +62,16 @@ eval_one \
   "continued_125m_best"
 
 eval_one \
+  "configs/tinystories_125m_full_ctx512_continue.yaml" \
+  "checkpoints/tinystories_125m_full_ctx512_continue/ckpt.pt" \
+  "continued_125m_final"
+
+eval_one \
   "configs/tinystories_107m_full_ctx512_tuned.yaml" \
   "checkpoints/tinystories_107m_full_ctx512_tuned/best.pt" \
   "tuned_107m_best"
+
+eval_one \
+  "configs/tinystories_107m_full_ctx512_tuned.yaml" \
+  "checkpoints/tinystories_107m_full_ctx512_tuned/ckpt.pt" \
+  "tuned_107m_final"
