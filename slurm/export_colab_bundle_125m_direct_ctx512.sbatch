@@ -17,10 +17,10 @@ export SPACK_ENV_NAME="${SPACK_ENV_NAME:-CS-2050-gpu}"
 export REQUIRE_TORCH=1
 source slurm/cluster_env.sh
 
-CONFIG="${CONFIG:-configs/tinystories_125m_full_ctx512.yaml}"
-CHECKPOINT="${CHECKPOINT:-checkpoints/tinystories_125m_full_ctx512/best.pt}"
-VECTORS="${VECTORS:-benchmarks/results/playful_direct_vectors_125m_full_ctx512.pt}"
-OUTPUT_DIR="${OUTPUT_DIR:-colab_bundle/playful_125m_direct_ctx512}"
+CONFIG="${CONFIG:-configs/tinystories_125m_full_ctx512_continue.yaml}"
+CHECKPOINT="${CHECKPOINT:-checkpoints/tinystories_125m_full_ctx512_continue/ckpt.pt}"
+VECTORS="${VECTORS:-benchmarks/results/playful_direct_vectors_125m_continue_ctx512.pt}"
+OUTPUT_DIR="${OUTPUT_DIR:-colab_bundle/playful_125m_continue_direct_ctx512}"
 DTYPE="${DTYPE:-float16}"
 EMOTION="${EMOTION:-playful}"
 LAYER="${LAYER:-3}"
