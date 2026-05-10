@@ -75,3 +75,13 @@ eval_one \
   "configs/tinystories_107m_full_ctx512_tuned.yaml" \
   "checkpoints/tinystories_107m_full_ctx512_tuned/ckpt.pt" \
   "tuned_107m_final"
+
+eval_one \
+  "configs/tinystories_125m_full_ctx512_continue_low_lr.yaml" \
+  "checkpoints/tinystories_125m_full_ctx512_continue_low_lr/best.pt" \
+  "low_lr_125m_best"
+
+eval_one \
+  "configs/tinystories_125m_full_ctx512_continue_low_lr.yaml" \
+  "checkpoints/tinystories_125m_full_ctx512_continue_low_lr/ckpt.pt" \
+  "low_lr_125m_final"

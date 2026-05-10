@@ -1,0 +1,60 @@
+project:
+  name: llm-activation-tinystories-125m-full-ctx512-continue-low-lr
+  seed: 1337
+
+paths:
+  raw_glob: data/raw/tinystories_full/TinyStoriesV2-GPT4-train.txt
+  val_raw_glob: data/raw/tinystories_full/TinyStoriesV2-GPT4-valid.txt
+  tokenizer: data/processed/tinystories_24m/tokenizer.json
+  train_data: data/processed/tinystories_full/train.npy
+  val_data: data/processed/tinystories_full/val.npy
+  metadata: data/processed/tinystories_full/metadata.yaml
+  checkpoint_dir: checkpoints/tinystories_125m_full_ctx512_continue_low_lr
+
+tokenizer:
+  vocab_size: 8192
+  min_frequency: 2
+
+data:
+  train_ratio: 0.99
+
+model:
+  vocab_size: auto
+  context_length: 512
+  num_layers: 12
+  num_heads: 12
+  d_model: 768
+  d_ff: 3072
+  rope_theta: 10000.0
+  dropout: 0.05
+  attention_impl: manual
+
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 16
+  max_iters: 160000
+  eval_interval: 1000
+  eval_iters: 100
+  log_interval: 50
+  learning_rate: 0.00002
+  min_lr: 0.000004
+  warmup_iters: 0
+  lr_decay_iters: 260000
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  grad_clip: 1.0
+  always_save_checkpoint: true
+  save_best_checkpoint: true
+  best_checkpoint_name: best.pt
+
+system:
+  device: auto
+  dtype: bfloat16
+  compile: false
+
+generation:
+  max_new_tokens: 500
+  temperature: 0.8
+  top_k: 100
+  stop_at_eos: true

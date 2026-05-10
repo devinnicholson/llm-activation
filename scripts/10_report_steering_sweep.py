@@ -109,7 +109,8 @@ def _record_row(record: dict[str, Any]) -> str:
     prompt_idx = record.get("prompt_idx", "")
     return (
         f"| {record['emotion']} | {record['layer']} | {_fmt(record['alpha'])} | "
-        f"{record['position']} | {prompt_idx} | {_fmt(record['delta'])} | "
+        f"{record['position']} | {prompt_idx} | {_fmt(record.get('quality_score', 0.0))} | "
+        f"{_fmt(record['delta'])} | "
         f"{_fmt(record['non_target_delta'])} | {_fmt(record['token_approx_delta'])} | "
         f"{_fmt(record['repeat_3gram_delta'], 3)} |"
     )
@@ -172,6 +173,7 @@ def top_configs_by_emotion(
     for emotion, rows in grouped.items():
         rows.sort(
             key=lambda row: (
+                -_float(row, "avg_quality_score", _float(row, "avg_delta")),
                 -_float(row, "avg_delta"),
                 int(_float(row, "layer")),
                 _float(row, "alpha"),
@@ -204,6 +206,7 @@ def representative_records(
             candidates = by_config.get(key, [])
             candidates.sort(
                 key=lambda record: (
+                    -float(record.get("quality_score", record["delta"])),
                     -float(record["delta"]),
                     str(record.get("prompt_idx", "")),
                     str(record.get("prompt", "")),
@@ -254,9 +257,10 @@ def build_report(
         "",
         (
             "| Emotion | Rank | Layer | Alpha | Position | n | Avg target delta | "
-            "Avg steered hits | Avg non-target delta | Avg token delta | Avg repeat delta |"
+            "Avg quality | Avg steered hits | Avg non-target delta | Avg token delta | "
+            "Avg repeat delta |"
         ),
-        "|---|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|",
+        "|---|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
 
     for emotion, rows in top_configs.items():
@@ -265,6 +269,7 @@ def build_report(
                 f"| {emotion} | {rank} | {_int(row, 'layer')} | "
                 f"{_fmt(_float(row, 'alpha'))} | {row.get('position', '')} | "
                 f"{_int(row, 'n')} | {_fmt(_float(row, 'avg_delta'))} | "
+                f"{_fmt(_float(row, 'avg_quality_score', _float(row, 'avg_delta')))} | "
                 f"{_fmt(_float(row, 'avg_steered_hits'))} | "
                 f"{_fmt(_float(row, 'avg_non_target_delta'))} | "
                 f"{_fmt(_float(row, 'avg_token_approx_delta'))} | "
@@ -272,7 +277,7 @@ def build_report(
             )
 
     if not top_configs:
-        lines.append("| _No summary rows_ |  |  |  |  |  |  |  |  |  |  |")
+        lines.append("| _No summary rows_ |  |  |  |  |  |  |  |  |  |  |  |")
 
     lines.extend(
         [
@@ -280,16 +285,16 @@ def build_report(
             "## Representative Records",
             "",
             (
-                "| Emotion | Layer | Alpha | Position | Prompt idx | Target delta | "
-                "Non-target delta | Token delta | Repeat delta |"
+                "| Emotion | Layer | Alpha | Position | Prompt idx | Quality | "
+                "Target delta | Non-target delta | Token delta | Repeat delta |"
             ),
-            "|---|---:|---:|---|---:|---:|---:|---:|---:|",
+            "|---|---:|---:|---|---:|---:|---:|---:|---:|---:|",
         ]
     )
     if representatives:
         lines.extend(_record_row(record) for record in representatives)
     else:
-        lines.append("| _No representative records_ |  |  |  |  |  |  |  |  |")
+        lines.append("| _No representative records_ |  |  |  |  |  |  |  |  |  |")
 
     lines.extend(["", "## Side-By-Side Samples", ""])
     if not representatives:
@@ -314,6 +319,7 @@ def build_report(
             [
                 (
                     f"Target delta: {_fmt(record['delta'])}; "
+                    f"quality: {_fmt(record.get('quality_score', 0.0))}; "
                     f"non-target delta: {_fmt(record['non_target_delta'])}; "
                     f"token delta: {_fmt(record['token_approx_delta'])}; "
                     f"repeat delta: {_fmt(record['repeat_3gram_delta'], 3)}"

@@ -45,6 +45,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--alphas", default="2,3")
     parser.add_argument("--positions", default="last,all")
     parser.add_argument("--prompt", action="append", default=None)
+    parser.add_argument(
+        "--prompt-file",
+        default=None,
+        help="Optional YAML file containing a prompt list, either as a list or under a prompts key.",
+    )
     parser.add_argument("--max-new-tokens", type=int, default=120)
     parser.add_argument("--temperature", type=float, default=None)
     parser.add_argument("--top-k", type=int, default=None)
@@ -85,6 +90,17 @@ def parse_csv_strings(spec: str) -> list[str]:
 
 def parse_csv_floats(spec: str) -> list[float]:
     return [float(item) for item in parse_csv_strings(spec)]
+
+
+def load_prompt_file(path: str | None) -> list[str]:
+    if path is None:
+        return []
+
+    payload = load_config(path)
+    prompts = payload.get("prompts", payload) if isinstance(payload, dict) else payload
+    if not isinstance(prompts, list) or not all(isinstance(item, str) for item in prompts):
+        raise ValueError(f"Prompt file {path} must be a list of strings or contain prompts: list.")
+    return [str(item) for item in prompts]
 
 
 def seed_everything(seed: int, device: torch.device) -> None:
@@ -139,7 +155,11 @@ def main() -> None:
     layers = parse_layers(args.layers, num_layers=model.config.num_layers)
     alphas = parse_csv_floats(args.alphas)
     positions = parse_csv_strings(args.positions)
-    prompts = args.prompt or DEFAULT_PROMPTS
+    prompts = load_prompt_file(args.prompt_file)
+    if args.prompt:
+        prompts.extend(args.prompt)
+    if not prompts:
+        prompts = DEFAULT_PROMPTS
 
     generation_cfg = config["generation"]
     temperature = (
@@ -166,6 +186,7 @@ def main() -> None:
         "vectors": args.vectors,
         "output": str(output_path),
         "manifest": str(manifest_path),
+        "prompt_file": args.prompt_file,
         "layers": layers,
         "alphas": alphas,
         "positions": positions,

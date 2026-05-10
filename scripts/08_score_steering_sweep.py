@@ -87,6 +87,10 @@ LEXICON = {
     ],
     "playful": [
         "playful",
+        "play",
+        "played",
+        "game",
+        "games",
         "joke",
         "joked",
         "joking",
@@ -95,11 +99,24 @@ LEXICON = {
         "pretended",
         "silly",
         "funny",
+        "dance",
+        "danced",
+        "dancing",
+        "bounce",
+        "bounced",
+        "bouncy",
         "giggle",
         "giggled",
+        "chuckle",
+        "chuckled",
         "laughed",
         "smile",
         "smiled",
+        "grin",
+        "grinned",
+        "cheer",
+        "cheered",
+        "party",
     ],
     "serious": [
         "serious",
@@ -135,8 +152,13 @@ SUMMARY_FIELDS = [
     "position",
     "n",
     "avg_delta",
+    "avg_quality_score",
     "avg_baseline_hits",
     "avg_steered_hits",
+    "avg_baseline_target_unique_terms",
+    "avg_steered_target_unique_terms",
+    "avg_baseline_target_concentration",
+    "avg_steered_target_concentration",
     "avg_elapsed_s",
     "avg_non_target_delta",
     "avg_baseline_non_target_hits",
@@ -208,6 +230,31 @@ def keyword_count(text: str, emotion: str) -> int:
     return sum(len(re.findall(rf"\b{re.escape(term)}\b", word_text)) for term in LEXICON[emotion])
 
 
+def keyword_term_counts(text: str, emotion: str) -> dict[str, int]:
+    words = WORD_RE.findall(text.lower())
+    word_text = " ".join(words)
+    return {
+        term: len(re.findall(rf"\b{re.escape(term)}\b", word_text))
+        for term in LEXICON[emotion]
+    }
+
+
+def target_keyword_profile(text: str, emotion: str) -> dict[str, float]:
+    counts = keyword_term_counts(text, emotion)
+    total = sum(counts.values())
+    if total == 0:
+        return {
+            "target_unique_terms": 0.0,
+            "target_max_term_hits": 0.0,
+            "target_concentration": 0.0,
+        }
+    return {
+        "target_unique_terms": float(sum(1 for value in counts.values() if value > 0)),
+        "target_max_term_hits": float(max(counts.values())),
+        "target_concentration": float(max(counts.values()) / total),
+    }
+
+
 def non_target_keyword_count(text: str, target_emotion: str) -> int:
     return sum(keyword_count(text, emotion) for emotion in LEXICON if emotion != target_emotion)
 
@@ -230,7 +277,7 @@ def repetition_ngram_rate(text: str, n: int = 3) -> float:
 
 
 def text_metrics(text: str, target_emotion: str) -> dict[str, float]:
-    return {
+    metrics = {
         "target_hits": float(keyword_count(text, target_emotion)),
         "non_target_hits": float(non_target_keyword_count(text, target_emotion)),
         "chars": float(len(text)),
@@ -238,6 +285,30 @@ def text_metrics(text: str, target_emotion: str) -> dict[str, float]:
         "story_boundaries": float(story_boundary_count(text)),
         "repeat_3gram_rate": repetition_ngram_rate(text),
     }
+    metrics.update(target_keyword_profile(text, target_emotion))
+    return metrics
+
+
+def steering_quality_score(
+    *,
+    delta: float,
+    non_target_delta: float,
+    token_delta: float,
+    repeat_delta: float,
+    steered_target_concentration: float,
+) -> float:
+    effective_delta = min(delta, 25.0)
+    repeat_penalty = 120.0 * max(repeat_delta, 0.0)
+    non_target_penalty = 0.4 * max(non_target_delta, 0.0)
+    length_penalty = 0.08 * abs(token_delta)
+    concentration_penalty = 15.0 * max(steered_target_concentration - 0.55, 0.0)
+    return (
+        effective_delta
+        - repeat_penalty
+        - non_target_penalty
+        - length_penalty
+        - concentration_penalty
+    )
 
 
 def _coerce_text(record: dict[str, Any], key: str) -> str:
@@ -258,6 +329,17 @@ def score_record(record: dict[str, Any]) -> dict[str, Any]:
     steered_text = _coerce_text(record, "steered_text")
     baseline = text_metrics(baseline_text, emotion)
     steered = text_metrics(steered_text, emotion)
+    delta = steered["target_hits"] - baseline["target_hits"]
+    non_target_delta = steered["non_target_hits"] - baseline["non_target_hits"]
+    token_delta = steered["tokens_approx"] - baseline["tokens_approx"]
+    repeat_delta = steered["repeat_3gram_rate"] - baseline["repeat_3gram_rate"]
+    quality_score = steering_quality_score(
+        delta=delta,
+        non_target_delta=non_target_delta,
+        token_delta=token_delta,
+        repeat_delta=repeat_delta,
+        steered_target_concentration=steered["target_concentration"],
+    )
 
     return {
         "emotion": emotion,
@@ -266,22 +348,27 @@ def score_record(record: dict[str, Any]) -> dict[str, Any]:
         "position": str(record["position"]),
         "baseline_hits": baseline["target_hits"],
         "steered_hits": steered["target_hits"],
-        "delta": steered["target_hits"] - baseline["target_hits"],
+        "delta": delta,
+        "quality_score": quality_score,
+        "baseline_target_unique_terms": baseline["target_unique_terms"],
+        "steered_target_unique_terms": steered["target_unique_terms"],
+        "baseline_target_concentration": baseline["target_concentration"],
+        "steered_target_concentration": steered["target_concentration"],
         "baseline_non_target_hits": baseline["non_target_hits"],
         "steered_non_target_hits": steered["non_target_hits"],
-        "non_target_delta": steered["non_target_hits"] - baseline["non_target_hits"],
+        "non_target_delta": non_target_delta,
         "baseline_chars": baseline["chars"],
         "steered_chars": steered["chars"],
         "char_delta": steered["chars"] - baseline["chars"],
         "baseline_tokens_approx": baseline["tokens_approx"],
         "steered_tokens_approx": steered["tokens_approx"],
-        "token_approx_delta": steered["tokens_approx"] - baseline["tokens_approx"],
+        "token_approx_delta": token_delta,
         "baseline_story_boundaries": baseline["story_boundaries"],
         "steered_story_boundaries": steered["story_boundaries"],
         "story_boundary_delta": steered["story_boundaries"] - baseline["story_boundaries"],
         "baseline_repeat_3gram_rate": baseline["repeat_3gram_rate"],
         "steered_repeat_3gram_rate": steered["repeat_3gram_rate"],
-        "repeat_3gram_delta": steered["repeat_3gram_rate"] - baseline["repeat_3gram_rate"],
+        "repeat_3gram_delta": repeat_delta,
         "elapsed_s": float(record.get("elapsed_s", 0.0) or 0.0),
     }
 
@@ -390,8 +477,21 @@ def summarize_groups(
                 "position": position,
                 "n": len(values),
                 "avg_delta": mean(item["delta"] for item in values),
+                "avg_quality_score": mean(item["quality_score"] for item in values),
                 "avg_baseline_hits": mean(item["baseline_hits"] for item in values),
                 "avg_steered_hits": mean(item["steered_hits"] for item in values),
+                "avg_baseline_target_unique_terms": mean(
+                    item["baseline_target_unique_terms"] for item in values
+                ),
+                "avg_steered_target_unique_terms": mean(
+                    item["steered_target_unique_terms"] for item in values
+                ),
+                "avg_baseline_target_concentration": mean(
+                    item["baseline_target_concentration"] for item in values
+                ),
+                "avg_steered_target_concentration": mean(
+                    item["steered_target_concentration"] for item in values
+                ),
                 "avg_elapsed_s": mean(item["elapsed_s"] for item in values),
                 "avg_non_target_delta": mean(item["non_target_delta"] for item in values),
                 "avg_baseline_non_target_hits": mean(
@@ -424,7 +524,15 @@ def summarize_groups(
                 ),
             }
         )
-    rows.sort(key=lambda row: (row["emotion"], -row["avg_delta"], row["layer"], row["alpha"]))
+    rows.sort(
+        key=lambda row: (
+            row["emotion"],
+            -row["avg_quality_score"],
+            -row["avg_delta"],
+            row["layer"],
+            row["alpha"],
+        )
+    )
     return rows
 
 
@@ -486,7 +594,7 @@ def main() -> None:
         for row in best:
             print(
                 f"  layer={row['layer']} alpha={row['alpha']} position={row['position']} "
-                f"avg_delta={row['avg_delta']:.2f}"
+                f"avg_delta={row['avg_delta']:.2f} quality={row['avg_quality_score']:.2f}"
             )
 
 
