@@ -46,13 +46,13 @@ The current default steering setting is below.
 
 ```text
 emotion = playful
-layer = 3
+layer = 4
 alpha = 10
 position = all
 prompt = Once upon a time there was a little robot
 ```
 
-Baseline generation stays closer to the original TinyStories continuation. The steered generation shifts toward a more playful continuation while the prompt stays the same. Higher-alpha settings can force more playful keywords, but this default is a cleaner tradeoff than the repetitive settings at the top of the raw keyword sweep.
+Baseline generation stays closer to the original TinyStories continuation. The steered generation shifts toward a more playful continuation while the prompt stays the same. This default uses the refined playful-vs-serious vector sweep and is a cleaner tradeoff than the repetitive settings at the top of the raw keyword sweep. For a stronger but less coherent effect, use `layer=4 alpha=12 position=all`.
 
 The steering vector is added directly inside the model during generation.
 
@@ -69,7 +69,7 @@ GitHub stores the code and notebook. Google Drive stores the exported model bund
 Expected Drive layout
 
 ```text
-MyDrive/llm-activation-colab/playful_125m_continue_direct_ctx512/
+MyDrive/llm-activation-colab/playful_125m_continue_refined_ctx512/
   model.pt
   tokenizer.json
   vectors.pt
@@ -122,14 +122,14 @@ configs/tinystories_125m_full_ctx512.yaml
 configs/tinystories_125m_full_ctx512_continue.yaml
 ```
 
-Build playful and serious steering vectors
+Build refined playful and serious steering vectors
 
 ```bash
 python scripts/05_build_emotion_vectors.py \
   --config configs/tinystories_125m_full_ctx512_continue.yaml \
   --checkpoint checkpoints/tinystories_125m_full_ctx512_continue/ckpt.pt \
-  --prompt-bank prompt_banks/playful_vs_serious_direct.yaml \
-  --output benchmarks/results/playful_direct_vectors_125m_continue_ctx512.pt
+  --prompt-bank prompt_banks/playful_vs_serious_refined.yaml \
+  --output benchmarks/results/playful_refined_vectors_125m_continue_ctx512.pt
 ```
 
 Run steering
@@ -138,9 +138,9 @@ Run steering
 python scripts/06_steer_generation.py \
   --config configs/tinystories_125m_full_ctx512_continue.yaml \
   --checkpoint checkpoints/tinystories_125m_full_ctx512_continue/ckpt.pt \
-  --vectors benchmarks/results/playful_direct_vectors_125m_continue_ctx512.pt \
+  --vectors benchmarks/results/playful_refined_vectors_125m_continue_ctx512.pt \
   --emotion playful \
-  --layer 3 \
+  --layer 4 \
   --alpha 10 \
   --position all \
   --prompt "Once upon a time there was a little robot"
@@ -150,6 +150,12 @@ Run the refined steering sweep used to avoid repetitive keyword-gaming outputs:
 
 ```bash
 sbatch slurm/playful_refined_pipeline_125m_continue_ctx512.sbatch
+```
+
+Export the current Colab bundle:
+
+```bash
+sbatch slurm/export_colab_bundle_125m_refined_ctx512.sbatch
 ```
 
 ## Repository Layout
