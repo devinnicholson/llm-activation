@@ -52,7 +52,7 @@ position = all
 prompt = Once upon a time there was a little robot
 ```
 
-Baseline generation stays closer to the original TinyStories continuation. The steered generation shifts toward a more playful continuation while the prompt stays the same. This default uses the refined playful-vs-serious vector sweep and is a cleaner tradeoff than the repetitive settings at the top of the raw keyword sweep. For a stronger but less coherent effect, use `layer=4 alpha=12 position=all`.
+Baseline generation stays closer to the original TinyStories continuation. The steered generation shifts toward a more playful continuation while the prompt stays the same. This default uses the refined playful-vs-serious vector sweep and is a cleaner tradeoff than the repetitive settings at the top of the raw keyword sweep. The Colab notebook also exposes a `serious` option by reversing the same direction. For a stronger but less coherent playful effect, use `layer=4 alpha=12 position=all`.
 
 The steering vector is added directly inside the model during generation.
 
