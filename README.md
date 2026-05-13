@@ -46,13 +46,13 @@ The current default steering setting is below.
 
 ```text
 emotion = playful
-layer = 4
-alpha = 10
+layer = 7
+alpha = 12
 position = all
 prompt = Once upon a time there was a little robot
 ```
 
-Baseline generation stays closer to the original TinyStories continuation. The steered generation shifts toward a more playful continuation while the prompt stays the same. This default uses the refined playful-vs-serious vector sweep and is a cleaner tradeoff than the repetitive settings at the top of the raw keyword sweep. The Colab notebook also exposes a `serious` option by reversing the same direction. For a stronger but less coherent playful effect, use `layer=4 alpha=12 position=all`.
+Baseline generation stays closer to the original TinyStories continuation. The steered generation shifts toward a more playful continuation while the prompt stays the same. This default uses the refined playful-vs-serious vector sweep and a later layer that keeps lower keyword concentration than the high-effect layer 4 settings. The Colab notebook also exposes a `serious` option by reversing the same direction. For a stronger but less coherent playful effect, use `layer=4 alpha=10 position=all`.
 
 The steering vector is added directly inside the model during generation.
 
@@ -140,8 +140,8 @@ python scripts/06_steer_generation.py \
   --checkpoint checkpoints/tinystories_125m_full_ctx512_continue/ckpt.pt \
   --vectors benchmarks/results/playful_refined_vectors_125m_continue_ctx512.pt \
   --emotion playful \
-  --layer 4 \
-  --alpha 10 \
+  --layer 7 \
+  --alpha 12 \
   --position all \
   --prompt "Once upon a time there was a little robot"
 ```
